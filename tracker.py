@@ -55,8 +55,30 @@ class Tracker :
                 'message': 'Hello World!'
             }
             return jsonify(tracker_info), 200
-
         
+        @self.app.route('/file/<infohash>', methods=['GET'])
+        def search_file(infohash):
+            if not infohash in self.file_list :
+                print(f'File with infohash {infohash} not found!')
+                return self.generate_error_response_json(message='File not found!', status=404)
+            
+            file_data = self.file_list[infohash]
+            peers = []
+
+            for seed in file_data['seeds'] : 
+                peers.append({
+                    'peer_id': seed['id'],
+                    'ip': seed['ip'],
+                    'port': seed['port'],
+                })
+
+            response_payload = {
+                'tracker_id': f'{self.ip}:{self.port}',
+                'peers': peers
+            }
+
+            return jsonify(response_payload), 200
+
         @self.app.route('/file', methods=['POST'])
         def seed_file():
             data = request.get_json()
