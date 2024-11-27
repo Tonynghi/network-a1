@@ -18,7 +18,6 @@ class Peer :
             self,
             id,
             upload_port,
-            download_port,
             self_host = 'localhost',
             tracker_host = 'localhost',
             tracker_port = 7000,
@@ -27,7 +26,6 @@ class Peer :
         self.id = id
         self.self_host = self_host
         self.upload_port = int(upload_port)
-        self.upload_port = int(download_port)
         self.tracker_host = tracker_host
         self.tracker_port = int(tracker_port)
         self.tracker_url = 'http://' + self.tracker_host + ':' + str(self.tracker_port)
@@ -62,11 +60,15 @@ class Peer :
                 else :
                     method, content = parse_command(command=command)
                     if(method == 'SEED') : 
-                        valid = self.check_seed_files(paths=content)
+                        valid = self.check_seed_files(names=content)
 
                         if not valid :
                             raise Exception(Fore.RED +  'Some files can not be found! Abort command!\n' + Fore.WHITE)
-                        response = self.send_seed_file_request(paths=content)
+                        response = self.send_seed_file_request(names=content)
+
+                        if (response.status_code == 200) : 
+                            print(Fore.GREEN + 'Sucessfully seeded files' + Fore.WHITE)
+                        
                         self.print_response(response=response.json(), status_code=response.status_code)
                     elif(method == 'SEARCH') :
                         if(len(content) != 1) : 
@@ -74,6 +76,8 @@ class Peer :
                         
                         response = self.send_search_file_request(name=content[0])
 
+                        if (response.status_code == 200) : 
+                            print(Fore.GREEN + 'Sucessfully searched for the file' + Fore.WHITE)
                         self.print_response(response=response.json(), status_code=response.status_code)
                     elif(method == 'DOWNLOAD') :
                         # if(len(content) != 1) : 
@@ -138,7 +142,7 @@ class Peer :
 
     def init_download(self, name) :
         path = './data/' + name
-        exists = self.check_existence(path=path)
+        exists = self.check_existence(name=name)
 
         if exists : 
             print(f'File {name} already exists in system!')
@@ -182,22 +186,23 @@ class Peer :
         print(Fore.GREEN + f'File {name} is completely assembled! Process completed' + Fore.WHITE)
     
     # FUNCTIONS
-    def check_seed_files(self, paths):
+    def check_seed_files(self, names):
         valid = True
 
-        if(len(paths) <= 0) :
+        if(len(names) <= 0) :
             print(Fore.RED +  f'No file specified.\n' + Fore.WHITE)
             valid = False
 
-        for path in paths :
-            exists = self.check_existence(path)
+        for name in names :
+            exists = self.check_existence(name)
             if not exists:
-                print(Fore.RED +  f'File path {path} does not exist.\n' + Fore.WHITE)
+                print(Fore.RED +  f'File named {name} does not exist.\n' + Fore.WHITE)
                 valid = False
         
         return valid
 
-    def check_existence (self, path):
+    def check_existence (self, name):
+        path = './data/' + name
         return os.path.isfile(path)
     
     def get_chunk (self, path, chunk_size, index) :
@@ -285,15 +290,16 @@ class Peer :
 
         return response
     
-    def send_seed_file_request(self, paths) :
+    def send_seed_file_request(self, names) :
         url = self.tracker_url + '/file'
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 
         files = []
 
-        for path in paths :
-            path_components = path.split('/')
-            name = path_components[-1]
+        for name in names :
+            # path_components = path.split('/')
+            # name = path_components[-1]
+            path = './data/' + name
             size = os.path.getsize(path)
             infohash = sha256(name.encode()).hexdigest()
             files.append({
@@ -337,6 +343,6 @@ class Peer :
             os._exit(0)
 
 if __name__ == '__main__' :
-    peer = Peer(id=sys.argv[1], self_host=sys.argv[2], upload_port=sys.argv[3], download_port=sys.argv[4])
+    peer = Peer(id=sys.argv[1], self_host=sys.argv[2], upload_port=sys.argv[3])
 
     peer.init()

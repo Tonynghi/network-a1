@@ -17,8 +17,8 @@ class Tracker :
         self.lock = threading.Lock()
 
         # Tracking list
-        self.peer_list = {} # {adress: peer}
-        self.file_list = {} # {file_name: peers : [address]}
+        self.peer_list = {}
+        self.file_list = {}
 
         # Flask app
         self.app = None
@@ -40,16 +40,6 @@ class Tracker :
 
         @self.app.route('/', methods=['GET'])
         def home():
-            tracker_info = {
-                'name': 'Tracker for torrent connection',
-                'message': 'Hello World!'
-            }
-            return jsonify(tracker_info), 200
-        
-        @self.app.route('/file', methods=['GET'])
-        def get_file():
-            ip = request.args.get('ip')
-            port = request.args.get('port')
             tracker_info = {
                 'name': 'Tracker for torrent connection',
                 'message': 'Hello World!'
